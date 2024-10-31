@@ -1,13 +1,11 @@
-export interface ElectronAPI {
-    parsePDF: (filePath: string) => Promise<string>;
-    saveTrainingData: (data: TrainingData) => Promise<string>;
-    startModelTraining: () => Promise<any>;
-    evaluateModel: (filePath: string) => Promise<any>;
-    convertQuote: (filePath: string) => Promise<any>;
-  }
-  
-  declare global {
-    interface Window {
-      electron: ElectronAPI;
-    }
-  }
+declare module 'pdf-parse' {
+  function parse(dataBuffer: Buffer, options?: any): Promise<{
+    numpages: number;
+    numrender: number;
+    info: any;
+    metadata: any;
+    text: string;
+    version: string;
+  }>;
+  export = parse;
+}
