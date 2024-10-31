@@ -6,7 +6,5 @@ productName: PDF Quote Converter
 files:
   - filter:
       - dist/**/*
-      - src/main.js
-      - src/preload.js
       - package.json
 electronVersion: 27.3.11

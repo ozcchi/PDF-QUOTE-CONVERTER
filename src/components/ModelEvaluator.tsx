@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 
 export default function ModelEvaluator() {
   const [testFile, setTestFile] = useState<File | null>(null);
@@ -22,13 +22,12 @@ export default function ModelEvaluator() {
     }
 
     try {
-      // TypeScriptの型定義ファイルを更新して、window.electronの型を正確に定義する必要があります
       const result = await (window as any).electron.evaluateModel(testFile.path);
       setResult(result);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Model evaluation failed:', err);
-      setError('評価に失敗しました: ' + err.message);
+      setError('評価に失敗しました: ' + (err instanceof Error ? err.message : String(err)));
       setResult(null);
     }
   };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import DataCollector from '@/components/DataCollector';
 import ModelTrainer from '@/components/ModelTrainer';
 import ModelEvaluator from '@/components/ModelEvaluator';

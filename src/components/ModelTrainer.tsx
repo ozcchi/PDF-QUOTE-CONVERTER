@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/Button';
+import { Progress } from '@/components/ui/Progress';
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/Alert';
 
 export default function ModelTrainer() {
   const [isTraining, setIsTraining] = useState(false);
@@ -14,7 +14,6 @@ export default function ModelTrainer() {
     setError(null);
 
     try {
-      // TypeScriptの型定義ファイルを更新して、window.electronの型を正確に定義する必要があります
       const trainingResult = await (window as any).electron.startModelTraining((currentProgress: number) => {
         setProgress(currentProgress);
       });
@@ -24,8 +23,8 @@ export default function ModelTrainer() {
       } else {
         setError(trainingResult.error);
       }
-    } catch (err) {
-      setError('トレーニングに失敗しました: ' + err.message);
+    } catch (err: unknown) {
+      setError('トレーニングに失敗しました: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsTraining(false);
     }

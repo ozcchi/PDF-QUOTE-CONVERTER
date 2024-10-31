@@ -1,23 +1,9 @@
-import React, { forwardRef } from 'react';
+import React from 'react';
 
-interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
-  required?: boolean;
-}
-
-const Label = forwardRef<HTMLLabelElement, LabelProps>(({ children, required, className, ...props }, ref) => {
+export function Label({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
-    <label
-      ref={ref}
-      className={`block text-sm font-medium text-gray-700 mb-1 ${className || ''}`}
-      {...props}
-    >
+    <label className="block text-sm font-medium text-gray-700" {...props}>
       {children}
-      {required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
-      {required && <span className="sr-only">(必須)</span>}
     </label>
   );
-});
-
-Label.displayName = 'Label';
-
-export default Label;
+}

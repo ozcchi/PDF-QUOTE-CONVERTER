@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Textarea } from '@/components/ui/Textarea';
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/Alert';
 
 export default function DataCollector() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -27,12 +27,11 @@ export default function DataCollector() {
     }
 
     try {
-      // TypeScriptの型定義ファイルを更新して、window.electronの型を正確に定義する必要があります
       await (window as any).electron.saveTrainingData(pdfFile.path, jsonData);
       setError(null);
       // 成功メッセージを表示するなどの処理を追加
-    } catch (err) {
-      setError('データの保存に失敗しました: ' + err.message);
+    } catch (err: unknown) {
+      setError('データの保存に失敗しました: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 

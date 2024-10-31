@@ -38,7 +38,7 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; script-src 'self';"],
+        'Content-Security-Policy': "default-src 'self'; script-src 'self';"
       },
     });
   });
@@ -63,9 +63,9 @@ ipcMain.handle('save-training-data', async (event, pdfPath: string, jsonData: st
     // PDFファイルとJSONデータを保存するロジックをここに実装
     // 例: ファイルをコピーし、JSONデータをファイルに書き込む
     return { success: true };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to save training data:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
 
@@ -78,22 +78,21 @@ ipcMain.handle('start-model-training', async (event, progressCallback) => {
       await new Promise(resolve => setTimeout(resolve, 1000)); // シミュレーション用の遅延
     }
     return { success: true };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Model training failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
+
 });
-
-
 
 ipcMain.handle('evaluate-model', async (event, testFilePath: string) => {
   try {
     // モデル評価のロジックをここに実装
     // 例: テストファイルを読み込み、モデルで処理し、結果を返す
     return { success: true, result: 'モデル評価結果をここに記述' };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Model evaluation failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });
 
@@ -114,8 +113,8 @@ ipcMain.handle('convert-quote', async (event, pdfPath: string, progressCallback)
 
     const processedData = JSON.stringify({ /* 変換後のデータ */ });
     return { success: true, data: processedData };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('PDF conversion failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 });

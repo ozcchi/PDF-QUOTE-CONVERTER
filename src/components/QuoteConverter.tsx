@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/Alert';
+import { Progress } from '@/components/ui/Progress';
 
 export default function QuoteConverter() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -30,14 +30,13 @@ export default function QuoteConverter() {
     setConversionResult(null);
 
     try {
-      // TypeScriptの型定義ファイルを更新して、window.electronの型を正確に定義する必要があります
       const result = await (window as any).electron.convertQuote(pdfFile.path, (currentProgress: number) => {
         setProgress(currentProgress);
       });
 
       setConversionResult(result);
-    } catch (err) {
-      setError('変換に失敗しました: ' + err.message);
+    } catch (err: unknown) {
+      setError('変換に失敗しました: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsConverting(false);
     }
@@ -50,7 +49,9 @@ export default function QuoteConverter() {
         <Input id="pdf-file" type="file" accept=".pdf" onChange={handleFileChange} />
       </div>
       <Button onClick={handleConvert} disabled={isConverting}>
-        {isConverting ? '変換中...' : '変換を開始'}
+        {isConverting ? '変換中...' : 
+
+ '変換を開始'}
       </Button>
       {isConverting && <Progress value={progress} />}
       {conversionResult && (
