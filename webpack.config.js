@@ -42,13 +42,8 @@ module.exports = {
     alias: {
       '@': path.resolve(__dirname, 'src'),
       '@components': path.resolve(__dirname, 'src/components'),
-      '@styles': path.resolve(__dirname, 'src/styles'),
       '@ui': path.resolve(__dirname, 'src/components/ui')
-    },
-    modules: [
-      'node_modules',
-      path.resolve(__dirname, 'src')
-    ]
+    }
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -68,8 +63,5 @@ module.exports = {
     hot: true,
     historyApiFallback: true
   },
-  devtool: 'source-map',
-  externals: {
-    electron: 'commonjs electron'
-  }
+  devtool: 'source-map'
 };

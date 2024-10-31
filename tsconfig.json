@@ -12,7 +12,12 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "jsx": "react",
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@ui/*": ["src/components/ui/*"]
+    }
   },
   "include": [
     "src/**/*"
