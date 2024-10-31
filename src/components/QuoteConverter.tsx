@@ -1,56 +1,43 @@
 import React, { useState } from 'react';
-import { Button } from '@ui/Button';
-import { Input } from '@ui/Input';
-import { Label } from '@ui/Label';
-import { Alert } from '@ui/Alert';
-import { Progress } from '@ui/Progress';
-
-interface ConversionResult {
-  success: boolean;
-  message: string;
-  convertedFilePath?: string;
-}
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 
 export default function QuoteConverter() {
-  const [isConverting, setIsConverting] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [conversionProgress, setConversionProgress] = useState(0);
-  const [conversionResult, setConversionResult] = useState<ConversionResult | null>(null);
+  const [conversionResult, setConversionResult] = useState<{ success: boolean; data?: string; error?: string } | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPdfFile(file);
-      setError(null);
-      setConversionResult(null);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setPdfFile(event.target.files[0]);
     }
   };
 
   const handleConvert = async () => {
     if (!pdfFile) {
-      setError('変換するPDFファイルを選択してください。');
+      setError('PDFファイルを選択してください。');
       return;
     }
 
     setIsConverting(true);
-    setConversionProgress(0);
+    setProgress(0);
     setError(null);
     setConversionResult(null);
 
     try {
-      // 変換プロセスのシミュレーション
-      for (let i = 0; i <= 100; i += 10) {
-        setConversionProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      // TypeScriptの型定義ファイルを更新して、window.electronの型を正確に定義する必要があります
+      const result = await (window as any).electron.convertQuote(pdfFile.path, (currentProgress: number) => {
+        setProgress(currentProgress);
+      });
 
-      // 実際の変換ロジックをここに実装
-      const result = await window.electron.convertQuote(pdfFile.path);
       setConversionResult(result);
     } catch (err) {
-      console.error('変換エラー:', err);
-      setError('見積書の変換中にエラーが発生しました。');
+      setError('変換に失敗しました: ' + err.message);
     } finally {
       setIsConverting(false);
     }
@@ -58,26 +45,22 @@ export default function QuoteConverter() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold mb-4">見積書変換</h2>
       <div>
-        <Label htmlFor="quote-pdf-upload">見積書PDFファイルをアップロード</Label>
-        <Input id="quote-pdf-upload" type="file" accept=".pdf" onChange={handleFileChange} disabled={isConverting} />
+        <Label htmlFor="pdf-file">PDFファイル</Label>
+        <Input id="pdf-file" type="file" accept=".pdf" onChange={handleFileChange} />
       </div>
-      <Button onClick={handleConvert} disabled={!pdfFile || isConverting}>
-        {isConverting ? '変換中...' : '見積書を変換'}
+      <Button onClick={handleConvert} disabled={isConverting}>
+        {isConverting ? '変換中...' : '変換を開始'}
       </Button>
-      {isConverting && (
-        <Progress value={conversionProgress} className="w-full" />
-      )}
+      {isConverting && <Progress value={progress} />}
       {conversionResult && (
-        <Alert variant={conversionResult.success ? "default" : "destructive"}>
+        <Alert variant={conversionResult.success ? 'default' : 'destructive'}>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{conversionResult.success ? '変換成功' : '変換失敗'}</AlertTitle>
           <AlertDescription>
-            {conversionResult.message}
-            {conversionResult.convertedFilePath && (
-              <p>変換されたファイル: {conversionResult.convertedFilePath}</p>
-            )}
+            {conversionResult.success
+              ? '変換が完了しました。結果: ' + conversionResult.data
+              : '変換に失敗しました: ' + conversionResult.error}
           </AlertDescription>
         </Alert>
       )}

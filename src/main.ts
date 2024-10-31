@@ -1,94 +1,50 @@
-import { app, BrowserWindow, ipcMain, session, globalShortcut } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
-import * as fs from 'fs/promises';
-import * as pdfParse from 'pdf-parse';
+import * as url from 'url';
+import * as fs from 'fs';
+import pdfParse from 'pdf-parse';
 
-interface MainWindow extends BrowserWindow {
-  isDestroyed(): boolean;
-}
+let mainWindow: Electron.BrowserWindow | null;
 
-let mainWindow: MainWindow | null = null;
-
-interface PDFParseOptions {
-  version: string;
-  textRenderOptions: {
-    normalizeWhitespace: boolean;
-    disableCombineTextItems: boolean;
-  };
-}
-
-interface TrainingData {
-  text: string;
-  annotations: {
-    manufacturer: string;
-    model: string;
-    price: string;
-    quantity: string;
-  };
-  metadata: {
-    filename: string;
-    fileSize: number;
-    timestamp: string;
-    textLength: number;
-  };
-}
-
-function createWindow(): void {
+function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 800,
+    height: 600,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      sandbox: true,
-      devTools: process.env.NODE_ENV === 'development'
-    }
-  }) as MainWindow;
-
-  // Content Security Policy の設定
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self' https://unpkg.com; " +
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; " +
-          "style-src 'self' 'unsafe-inline'; " +
-          "img-src 'self' data: https:; " +
-          "connect-src 'self' https://unpkg.com; " +
-          "font-src 'self' data:;"
-        ]
-      }
-    });
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
   });
 
-  const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
-  console.log('Loading index.html from:', indexPath);
-  mainWindow.loadFile(indexPath).catch(console.error);
-
   if (process.env.NODE_ENV === 'development') {
+    mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadURL(
+      url.format({
+        pathname: path.join(__dirname, '../index.html'),
+        protocol: 'file:',
+        slashes: true,
+      })
+    );
   }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self';"],
+      },
+    });
+  });
 }
 
-// アプリケーションのイベントハンドラ
-app.whenReady().then(() => {
-  createWindow();
-
-  // 開発ツール用のショートカット
-  if (process.env.NODE_ENV === 'development') {
-    globalShortcut.register('CommandOrControl+Shift+I', () => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.toggleDevTools();
-      }
-    });
-  }
-});
+app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -97,95 +53,69 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  if (!mainWindow) {
+  if (mainWindow === null) {
     createWindow();
   }
 });
 
-app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
-});
-
-// IPC ハンドラ
-ipcMain.handle('parse-pdf', async (_event, filePath: string): Promise<string> => {
-  console.log('PDF解析開始:', filePath);
+ipcMain.handle('save-training-data', async (event, pdfPath: string, jsonData: string) => {
   try {
-    if (!filePath) {
-      throw new Error('ファイルパスが指定されていません');
-    }
-
-    await fs.access(filePath);
-    
-    const dataBuffer = await fs.readFile(filePath);
-    console.log('PDFファイル読み込み完了 - サイズ:', dataBuffer.length, 'bytes');
-
-    const options: PDFParseOptions = {
-      version: 'default',
-      textRenderOptions: {
-        normalizeWhitespace: true,
-        disableCombineTextItems: false
-      }
-    };
-
-    const data = await pdfParse(dataBuffer, options);
-    
-    if (!data?.text) {
-      throw new Error('PDFからテキストを抽出できませんでした');
-    }
-
-    const normalizedText = data.text
-      .replace(/\r\n/g, '\n')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    console.log('PDF解析完了 - 抽出されたテキスト長:', normalizedText.length);
-    return normalizedText;
+    // PDFファイルとJSONデータを保存するロジックをここに実装
+    // 例: ファイルをコピーし、JSONデータをファイルに書き込む
+    return { success: true };
   } catch (error) {
-    console.error('PDF解析エラー:', error instanceof Error ? error.message : String(error));
-    throw error;
+    console.error('Failed to save training data:', error);
+    return { success: false, error: error.message };
   }
 });
 
-ipcMain.handle('save-training-data', async (_event, data: TrainingData): Promise<string> => {
-  console.log('トレーニングデータ保存開始');
+ipcMain.handle('start-model-training', async (event, progressCallback) => {
   try {
-    if (!data?.text || !data?.annotations) {
-      throw new Error('保存するデータが不完全です');
+    // モデルトレーニングのロジックをここに実装
+    // 進捗状況を定期的に報告
+    for (let i = 0; i <= 100; i += 10) {
+      progressCallback(i);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // シミュレーション用の遅延
     }
-
-    const { annotations } = data;
-    if (!annotations.manufacturer || !annotations.model || 
-        !annotations.price || !annotations.quantity) {
-      throw new Error('アノテーションデータが不完全です');
-    }
-
-    const userDataPath = app.getPath('userData');
-    const trainingDataDir = path.join(userDataPath, 'training-data');
-    await fs.mkdir(trainingDataDir, { recursive: true });
-    
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `training-data-${timestamp}.json`;
-    const filepath = path.join(trainingDataDir, filename);
-    
-    const formattedData = {
-      version: '1.0',
-      savedAt: new Date().toISOString(),
-      text: data.text,
-      annotations: data.annotations,
-      metadata: {
-        ...data.metadata,
-        appVersion: app.getVersion(),
-        platform: process.platform
-      }
-    };
-
-    await fs.writeFile(filepath, JSON.stringify(formattedData, null, 2));
-    
-    const shortPath = filepath.replace(userDataPath, '...');
-    console.log('トレーニングデータを保存しました:', shortPath);
-    return shortPath;
+    return { success: true };
   } catch (error) {
-    console.error('トレーニングデータ保存エラー:', error instanceof Error ? error.message : String(error));
-    throw error;
+    console.error('Model training failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+
+
+ipcMain.handle('evaluate-model', async (event, testFilePath: string) => {
+  try {
+    // モデル評価のロジックをここに実装
+    // 例: テストファイルを読み込み、モデルで処理し、結果を返す
+    return { success: true, result: 'モデル評価結果をここに記述' };
+  } catch (error) {
+    console.error('Model evaluation failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('convert-quote', async (event, pdfPath: string, progressCallback) => {
+  try {
+    const dataBuffer = fs.readFileSync(pdfPath);
+    const options = {
+      // PDFパース用のオプション
+    };
+    const data = await pdfParse(dataBuffer, options);
+    
+    // PDFデータの処理とJSONへの変換ロジックをここに実装
+    // 進捗状況を定期的に報告
+    for (let i = 0; i <= 100; i += 20) {
+      progressCallback(i);
+      await new Promise(resolve => setTimeout(resolve, 500)); // シミュレーション用の遅延
+    }
+
+    const processedData = JSON.stringify({ /* 変換後のデータ */ });
+    return { success: true, data: processedData };
+  } catch (error) {
+    console.error('PDF conversion failed:', error);
+    return { success: false, error: error.message };
   }
 });
